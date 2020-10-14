@@ -1,0 +1,31 @@
+---
+- hosts: ubuntu
+  become: yes
+  vars:
+  - projloc: /home/ansiuser/ci-cd/mavenproject
+  tasks:
+  - git:
+      repo: https://github.com/jenkinsdemos/newmaven
+      dest: /home/ansiuser/ci-cd/mavenproject
+    delegate_to: localhost
+    run_once: yes
+  - apt: 
+      name: "{{ item }}"
+      state: present
+    with_items:
+    - default-jre
+    - default-jdk
+    - tomcat8
+  - service: name=tomcat8 state=started
+  - apt: 
+      name: maven
+      state: latest
+    delegate_to: localhost
+    run_once: yes
+  - shell: "mvn -f {{ projloc }}/pom.xml package"
+    delegate_to: localhost
+    run_once: yes 
+  - copy: 
+      src: "{{ projloc }}/target/JenkinsWar.war"
+      dest: /var/lib/tomcat8/webapps/myapp.war
+
